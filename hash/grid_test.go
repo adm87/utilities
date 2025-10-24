@@ -18,7 +18,7 @@ func generateItems(count int) []TestItem {
 }
 
 func BenchmarkMinimalistGridInsert(b *testing.B) {
-	grid := NewGrid[TestItem](64.0)
+	grid := NewGrid[TestItem](64.0, 64.0)
 	items := generateItems(1000)
 
 	b.ResetTimer()
@@ -33,7 +33,7 @@ func BenchmarkMinimalistGridInsert(b *testing.B) {
 }
 
 func BenchmarkMinimalistGridQuery(b *testing.B) {
-	grid := NewGrid[TestItem](64.0)
+	grid := NewGrid[TestItem](64.0, 64.0)
 	items := generateItems(1000)
 
 	// Pre-populate grid
@@ -52,7 +52,7 @@ func BenchmarkMinimalistGridQuery(b *testing.B) {
 }
 
 func BenchmarkMinimalistGridQueryEmpty(b *testing.B) {
-	grid := NewGrid[TestItem](64.0)
+	grid := NewGrid[TestItem](64.0, 64.0)
 	items := generateItems(100)
 
 	// Pre-populate grid in small area (0-640 range)
@@ -72,7 +72,7 @@ func BenchmarkMinimalistGridQueryEmpty(b *testing.B) {
 }
 
 func BenchmarkMinimalistGridRemove(b *testing.B) {
-	grid := NewGrid[TestItem](64.0)
+	grid := NewGrid[TestItem](64.0, 64.0)
 	items := generateItems(1000)
 
 	// Pre-populate grid once
@@ -97,7 +97,7 @@ func BenchmarkMinimalistGridRemove(b *testing.B) {
 }
 
 func BenchmarkMinimalistGridContains(b *testing.B) {
-	grid := NewGrid[TestItem](64.0)
+	grid := NewGrid[TestItem](64.0, 64.0)
 	items := generateItems(1000)
 
 	// Pre-populate grid
@@ -117,7 +117,7 @@ func BenchmarkMinimalistGridContains(b *testing.B) {
 }
 
 func BenchmarkMinimalistGridLargeQuery(b *testing.B) {
-	grid := NewGrid[TestItem](64.0)
+	grid := NewGrid[TestItem](64.0, 64.0)
 	items := generateItems(10000)
 
 	// Pre-populate large grid
@@ -137,7 +137,7 @@ func BenchmarkMinimalistGridLargeQuery(b *testing.B) {
 }
 
 func BenchmarkMinimalistGridSpanningInsert(b *testing.B) {
-	grid := NewGrid[TestItem](64.0)
+	grid := NewGrid[TestItem](64.0, 64.0)
 	items := generateItems(1000)
 
 	b.ResetTimer()
