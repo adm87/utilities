@@ -9,6 +9,24 @@ func EncodeGridKey(x, y int32) uint64 {
 	return (upper << 32) | lower
 }
 
+func DecodeGridKey(key uint64) (x, y int32) {
+	const offset = 1 << 31
+	upper := int32(uint32(key >> 32))
+	lower := int32(uint32(key & 0xFFFFFFFF))
+	x = int32(int64(upper) - offset)
+	y = int32(int64(lower) - offset)
+	return
+}
+
+type GridItemPadding uint8
+
+const (
+	NoGridPadding   GridItemPadding = 0
+	GridCellPadding GridItemPadding = 1
+)
+
+type GridInsertionFunc[T comparable] func(minX, minY, maxX, maxY float32) bool
+
 // Grid is a simple spatial hash grid that stores items in cells based on their coordinates.
 //
 // Use this for static or infrequently-updated items. It is a minimalist implementation.
@@ -38,6 +56,57 @@ func (g *Grid[T]) cellRange(minX, minY, maxX, maxY float32) (minCellX, minCellY,
 	maxCellX = int32(math.Ceil(float64(maxX / g.cellWidth)))
 	maxCellY = int32(math.Ceil(float64(maxY / g.cellHeight)))
 	return
+}
+
+func (g *Grid[T]) insert(item T, minX, minY, maxX, maxY float32, padding GridItemPadding, fn GridInsertionFunc[T]) bool {
+	if g.Contains(item) {
+		return false
+	}
+
+	minCellX, minCellY, maxCellX, maxCellY := g.cellRange(minX, minY, maxX, maxY)
+
+	if padding == GridCellPadding {
+		minCellX--
+		minCellY--
+		maxCellX++
+		maxCellY++
+	}
+
+	var cellKeys []uint64
+	for cy := minCellY; cy < maxCellY; cy++ {
+		for cx := minCellX; cx < maxCellX; cx++ {
+			doInsert := true
+			if fn != nil {
+				cellMinX := float32(cx) * g.cellWidth
+				cellMinY := float32(cy) * g.cellHeight
+				cellMaxX := cellMinX + g.cellWidth
+				cellMaxY := cellMinY + g.cellHeight
+				doInsert = fn(cellMinX, cellMinY, cellMaxX, cellMaxY)
+			}
+			if doInsert {
+				key := EncodeGridKey(cx, cy)
+				g.cells[key] = append(g.cells[key], item)
+				cellKeys = append(cellKeys, key)
+			}
+		}
+	}
+
+	g.items[item] = 0
+	g.itemCells[item] = cellKeys
+
+	return true
+}
+
+func (g *Grid[T]) Cells() []uint64 {
+	keys := make([]uint64, 0, len(g.cells))
+	for key := range g.cells {
+		keys = append(keys, key)
+	}
+	return keys
+}
+
+func (g *Grid[T]) CellSize() (cellWidth, cellHeight float32) {
+	return g.cellWidth, g.cellHeight
 }
 
 // ForEach calls the given function for each item in the grid.
@@ -77,25 +146,13 @@ func (g *Grid[T]) Contains(item T) bool {
 }
 
 // Insert adds an item to the grid. Returns false if the item was already present.
-func (g *Grid[T]) Insert(item T, minX, minY, maxX, maxY float32) bool {
-	if g.Contains(item) {
-		return false
-	}
+func (g *Grid[T]) Insert(item T, minX, minY, maxX, maxY float32, padding GridItemPadding) bool {
+	return g.insert(item, minX, minY, maxX, maxY, padding, nil)
+}
 
-	var cellKeys []uint64
-	minCellX, minCellY, maxCellX, maxCellY := g.cellRange(minX, minY, maxX, maxY)
-	for cy := minCellY; cy < maxCellY; cy++ {
-		for cx := minCellX; cx < maxCellX; cx++ {
-			key := EncodeGridKey(cx, cy)
-			g.cells[key] = append(g.cells[key], item)
-			cellKeys = append(cellKeys, key)
-		}
-	}
-
-	g.items[item] = 0
-	g.itemCells[item] = cellKeys
-
-	return true
+// InsertFunc is like Insert but allows a function to determine per-cell insertion.
+func (g *Grid[T]) InsertFunc(item T, minX, minY, maxX, maxY float32, padding GridItemPadding, fn GridInsertionFunc[T]) bool {
+	return g.insert(item, minX, minY, maxX, maxY, padding, fn)
 }
 
 // Remove removes an item from the grid.
@@ -138,20 +195,32 @@ func (g *Grid[T]) Query(minX, minY, maxX, maxY float32) []T {
 	minCellX, minCellY, maxCellX, maxCellY := g.cellRange(minX, minY, maxX, maxY)
 	for cy := minCellY; cy < maxCellY; cy++ {
 		for cx := minCellX; cx < maxCellX; cx++ {
-			key := EncodeGridKey(cx, cy)
-			items, exists := g.cells[key]
-			if !exists {
-				continue
-			}
-
-			for _, item := range items {
-				if g.items[item] != g.gen {
-					g.qBuf = append(g.qBuf, item)
-					g.items[item] = g.gen
+			if items, exists := g.cells[EncodeGridKey(cx, cy)]; exists {
+				for _, item := range items {
+					if g.items[item] != g.gen {
+						g.qBuf = append(g.qBuf, item)
+						g.items[item] = g.gen
+					}
 				}
 			}
 		}
 	}
 
 	return g.qBuf
+}
+
+func (g *Grid[T]) QueryCells(minX, minY, maxX, maxY float32) []uint64 {
+	var cellKeys []uint64
+
+	minCellX, minCellY, maxCellX, maxCellY := g.cellRange(minX, minY, maxX, maxY)
+	for cy := minCellY; cy < maxCellY; cy++ {
+		for cx := minCellX; cx < maxCellX; cx++ {
+			key := EncodeGridKey(cx, cy)
+			if _, exists := g.cells[key]; exists {
+				cellKeys = append(cellKeys, key)
+			}
+		}
+	}
+
+	return cellKeys
 }

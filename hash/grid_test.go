@@ -28,7 +28,7 @@ func BenchmarkMinimalistGridInsert(b *testing.B) {
 		item := items[i%len(items)]
 		x := rand.Float32() * 3200
 		y := rand.Float32() * 3200
-		grid.Insert(item, x, y, x+32, y+32)
+		grid.Insert(item, x, y, x+32, y+32, NoGridPadding)
 	}
 }
 
@@ -40,7 +40,7 @@ func BenchmarkMinimalistGridQuery(b *testing.B) {
 	for _, item := range items {
 		x := rand.Float32() * 2048
 		y := rand.Float32() * 2048
-		grid.Insert(item, x, y, x+32, y+32)
+		grid.Insert(item, x, y, x+32, y+32, NoGridPadding)
 	}
 
 	b.ResetTimer()
@@ -59,7 +59,7 @@ func BenchmarkMinimalistGridQueryEmpty(b *testing.B) {
 	for _, item := range items {
 		x := rand.Float32() * 2048
 		y := rand.Float32() * 2048
-		grid.Insert(item, x, y, x+32, y+32)
+		grid.Insert(item, x, y, x+32, y+32, NoGridPadding)
 	}
 
 	b.ResetTimer()
@@ -79,7 +79,7 @@ func BenchmarkMinimalistGridRemove(b *testing.B) {
 	for _, item := range items {
 		x := rand.Float32() * 2048
 		y := rand.Float32() * 2048
-		grid.Insert(item, x, y, x+32, y+32)
+		grid.Insert(item, x, y, x+32, y+32, NoGridPadding)
 	}
 
 	b.ResetTimer()
@@ -92,7 +92,7 @@ func BenchmarkMinimalistGridRemove(b *testing.B) {
 		grid.Remove(item)
 
 		// Re-insert to maintain state
-		grid.Insert(item, x, y, x+32, y+32)
+		grid.Insert(item, x, y, x+32, y+32, NoGridPadding)
 	}
 }
 
@@ -104,7 +104,7 @@ func BenchmarkMinimalistGridContains(b *testing.B) {
 	for _, item := range items {
 		x := rand.Float32() * 2048
 		y := rand.Float32() * 2048
-		grid.Insert(item, x, y, x+32, y+32)
+		grid.Insert(item, x, y, x+32, y+32, NoGridPadding)
 	}
 
 	b.ResetTimer()
@@ -124,7 +124,7 @@ func BenchmarkMinimalistGridLargeQuery(b *testing.B) {
 	for _, item := range items {
 		x := rand.Float32() * 2048
 		y := rand.Float32() * 2048
-		grid.Insert(item, x, y, x+32, y+32)
+		grid.Insert(item, x, y, x+32, y+32, NoGridPadding)
 	}
 
 	b.ResetTimer()
@@ -148,6 +148,6 @@ func BenchmarkMinimalistGridSpanningInsert(b *testing.B) {
 		x := rand.Float32() * 2048
 		y := rand.Float32() * 2048
 		// Large item spanning multiple cells
-		grid.Insert(item, x, y, x+200, y+200)
+		grid.Insert(item, x, y, x+200, y+200, NoGridPadding)
 	}
 }
