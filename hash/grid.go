@@ -58,12 +58,12 @@ func (g *Grid[T]) cellRange(minX, minY, maxX, maxY float32) (minCellX, minCellY,
 	return
 }
 
-func (g *Grid[T]) insert(item T, minX, minY, maxX, maxY float32, padding GridItemPadding, fn GridInsertionFunc[T]) bool {
+func (g *Grid[T]) insert(item T, region [4]float32, padding GridItemPadding, fn GridInsertionFunc[T]) bool {
 	if g.Contains(item) {
 		return false
 	}
 
-	minCellX, minCellY, maxCellX, maxCellY := g.cellRange(minX, minY, maxX, maxY)
+	minCellX, minCellY, maxCellX, maxCellY := g.cellRange(region[0], region[1], region[2], region[3])
 
 	if padding == GridCellPadding {
 		minCellX--
@@ -95,6 +95,20 @@ func (g *Grid[T]) insert(item T, minX, minY, maxX, maxY float32, padding GridIte
 	g.itemCells[item] = cellKeys
 
 	return true
+}
+
+func (g *Grid[T]) Each(region [4]float32, fn func(item T) bool) {
+	minX, minY, maxX, maxY := region[0], region[1], region[2], region[3]
+	minCellX, minCellY, maxCellX, maxCellY := g.cellRange(minX, minY, maxX, maxY)
+	for cy := minCellY; cy < maxCellY; cy++ {
+		for cx := minCellX; cx < maxCellX; cx++ {
+			for _, item := range g.cells[EncodeGridKey(cx, cy)] {
+				if !fn(item) {
+					return
+				}
+			}
+		}
+	}
 }
 
 func (g *Grid[T]) Cells() []uint64 {
@@ -146,13 +160,13 @@ func (g *Grid[T]) Contains(item T) bool {
 }
 
 // Insert adds an item to the grid. Returns false if the item was already present.
-func (g *Grid[T]) Insert(item T, minX, minY, maxX, maxY float32, padding GridItemPadding) bool {
-	return g.insert(item, minX, minY, maxX, maxY, padding, nil)
+func (g *Grid[T]) Insert(item T, region [4]float32, padding GridItemPadding) bool {
+	return g.insert(item, region, padding, nil)
 }
 
 // InsertFunc is like Insert but allows a function to determine per-cell insertion.
-func (g *Grid[T]) InsertFunc(item T, minX, minY, maxX, maxY float32, padding GridItemPadding, fn GridInsertionFunc[T]) bool {
-	return g.insert(item, minX, minY, maxX, maxY, padding, fn)
+func (g *Grid[T]) InsertFunc(item T, region [4]float32, padding GridItemPadding, fn GridInsertionFunc[T]) bool {
+	return g.insert(item, region, padding, fn)
 }
 
 // Remove removes an item from the grid.
@@ -188,11 +202,11 @@ func (g *Grid[T]) Remove(item T) {
 }
 
 // Query returns all items that intersect the given AABB.
-func (g *Grid[T]) Query(minX, minY, maxX, maxY float32) []T {
+func (g *Grid[T]) Query(region [4]float32) []T {
 	g.qBuf = g.qBuf[:0]
 	g.gen++
 
-	minCellX, minCellY, maxCellX, maxCellY := g.cellRange(minX, minY, maxX, maxY)
+	minCellX, minCellY, maxCellX, maxCellY := g.cellRange(region[0], region[1], region[2], region[3])
 	for cy := minCellY; cy < maxCellY; cy++ {
 		for cx := minCellX; cx < maxCellX; cx++ {
 			if items, exists := g.cells[EncodeGridKey(cx, cy)]; exists {
@@ -209,10 +223,10 @@ func (g *Grid[T]) Query(minX, minY, maxX, maxY float32) []T {
 	return g.qBuf
 }
 
-func (g *Grid[T]) QueryCells(minX, minY, maxX, maxY float32) []uint64 {
+func (g *Grid[T]) QueryCells(region [4]float32) []uint64 {
 	var cellKeys []uint64
 
-	minCellX, minCellY, maxCellX, maxCellY := g.cellRange(minX, minY, maxX, maxY)
+	minCellX, minCellY, maxCellX, maxCellY := g.cellRange(region[0], region[1], region[2], region[3])
 	for cy := minCellY; cy < maxCellY; cy++ {
 		for cx := minCellX; cx < maxCellX; cx++ {
 			key := EncodeGridKey(cx, cy)

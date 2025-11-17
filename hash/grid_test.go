@@ -28,7 +28,7 @@ func BenchmarkMinimalistGridInsert(b *testing.B) {
 		item := items[i%len(items)]
 		x := rand.Float32() * 3200
 		y := rand.Float32() * 3200
-		grid.Insert(item, x, y, x+32, y+32, NoGridPadding)
+		grid.Insert(item, [4]float32{x, y, x + 32, y + 32}, NoGridPadding)
 	}
 }
 
@@ -40,14 +40,14 @@ func BenchmarkMinimalistGridQuery(b *testing.B) {
 	for _, item := range items {
 		x := rand.Float32() * 2048
 		y := rand.Float32() * 2048
-		grid.Insert(item, x, y, x+32, y+32, NoGridPadding)
+		grid.Insert(item, [4]float32{x, y, x + 32, y + 32}, NoGridPadding)
 	}
 
 	b.ResetTimer()
 	b.ReportAllocs()
 
 	for i := 0; i < b.N; i++ {
-		_ = grid.Query(100, 100, 300, 300)
+		_ = grid.Query([4]float32{100, 100, 300, 300})
 	}
 }
 
@@ -59,7 +59,7 @@ func BenchmarkMinimalistGridQueryEmpty(b *testing.B) {
 	for _, item := range items {
 		x := rand.Float32() * 2048
 		y := rand.Float32() * 2048
-		grid.Insert(item, x, y, x+32, y+32, NoGridPadding)
+		grid.Insert(item, [4]float32{x, y, x + 32, y + 32}, NoGridPadding)
 	}
 
 	b.ResetTimer()
@@ -67,7 +67,7 @@ func BenchmarkMinimalistGridQueryEmpty(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		// Query empty region far away
-		_ = grid.Query(5000, 5000, 5300, 5300)
+		_ = grid.Query([4]float32{5000, 5000, 5300, 5300})
 	}
 }
 
@@ -79,7 +79,7 @@ func BenchmarkMinimalistGridRemove(b *testing.B) {
 	for _, item := range items {
 		x := rand.Float32() * 2048
 		y := rand.Float32() * 2048
-		grid.Insert(item, x, y, x+32, y+32, NoGridPadding)
+		grid.Insert(item, [4]float32{x, y, x + 32, y + 32}, NoGridPadding)
 	}
 
 	b.ResetTimer()
@@ -92,7 +92,7 @@ func BenchmarkMinimalistGridRemove(b *testing.B) {
 		grid.Remove(item)
 
 		// Re-insert to maintain state
-		grid.Insert(item, x, y, x+32, y+32, NoGridPadding)
+		grid.Insert(item, [4]float32{x, y, x + 32, y + 32}, NoGridPadding)
 	}
 }
 
@@ -104,7 +104,7 @@ func BenchmarkMinimalistGridContains(b *testing.B) {
 	for _, item := range items {
 		x := rand.Float32() * 2048
 		y := rand.Float32() * 2048
-		grid.Insert(item, x, y, x+32, y+32, NoGridPadding)
+		grid.Insert(item, [4]float32{x, y, x + 32, y + 32}, NoGridPadding)
 	}
 
 	b.ResetTimer()
@@ -124,7 +124,7 @@ func BenchmarkMinimalistGridLargeQuery(b *testing.B) {
 	for _, item := range items {
 		x := rand.Float32() * 2048
 		y := rand.Float32() * 2048
-		grid.Insert(item, x, y, x+32, y+32, NoGridPadding)
+		grid.Insert(item, [4]float32{x, y, x + 32, y + 32}, NoGridPadding)
 	}
 
 	b.ResetTimer()
@@ -132,7 +132,7 @@ func BenchmarkMinimalistGridLargeQuery(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		// Large query that spans many cells
-		_ = grid.Query(0, 0, 1000, 1000)
+		_ = grid.Query([4]float32{0, 0, 1000, 1000})
 	}
 }
 
@@ -148,6 +148,6 @@ func BenchmarkMinimalistGridSpanningInsert(b *testing.B) {
 		x := rand.Float32() * 2048
 		y := rand.Float32() * 2048
 		// Large item spanning multiple cells
-		grid.Insert(item, x, y, x+200, y+200, NoGridPadding)
+		grid.Insert(item, [4]float32{x, y, x + 200, y + 200}, NoGridPadding)
 	}
 }
